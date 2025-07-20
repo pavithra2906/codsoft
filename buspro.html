@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RIT Bus Seat Booking</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f8fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #002147;
+      padding: 10px;
+    }
+    .header-image {
+      height: 100px;
+      margin: 0 15px;
+      border-radius: 8px;
+    }
+    .college-name {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 20px;
+      color: #002147;
+    }
+    main {
+      text-align: center;
+      padding: 20px;
+    }
+    select, input[type="text"] {
+      padding: 10px;
+      margin: 10px;
+      width: 250px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #0056b3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #003d80;
+    }
+    .seat-layout {
+      display: grid;
+      grid-template-columns: repeat(6, 50px);
+      gap: 10px 20px;
+      justify-content: center;
+      margin: 20px auto;
+      width: fit-content;
+    }
+    .seat {
+      width: 50px;
+      height: 50px;
+      background-color: #d4edda;
+      border: 1px solid #28a745;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    .seat.booked {
+      background-color: #dc3545;
+      color: white;
+      cursor: not-allowed;
+    }
+    .hidden {
+      display: none;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      background: #e2e8f0;
+      margin: 10px auto;
+      max-width: 400px;
+      border-radius: 6px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="ritcollege.jpeg" alt="RIT College" class="header-image">
+    <img src="ritlogo.webp" alt="RIT Logo" class="header-image">
+    <img src="RITbus.webp"  alt="RIT Bus" class="header-image">
+  </header>
+
+  <div class="college-name">Rajalakshmi Institute of Technology - Bus Seat Booking</div>
+
+  <main>
+    <h1>Welcome to RIT Bus Booking System</h1>
+
+
+<div id="loginPage">
+  <label>Register Number: <input type="number" id="regNo" required /></label>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="boardingPage" class="hidden">
+  <h2>Select Boarding Point</h2>
+  <select id="boardingPoint">
+    <option value="">--Select Stopping--</option>
+  </select>
+  <button onclick="showBuses()">Next</button>
+</div>
+
+<div id="busListPage" class="hidden">
+  <h2>Available Buses</h2>
+  <ul id="busList"></ul>
+  <div id="noBusMessage" class="hidden">No buses available for the selected stopping.</div>
+</div>
+
+<div id="seatSelectionPage" class="hidden">
+  <h2>Select Your Seat</h2>
+  <div class="seat-layout" id="seatLayout"></div>
+  <button onclick="confirmSeat()">Confirm Seat</button>
+</div>
+
+<div id="confirmationPage" class="hidden">
+  <h2>Booking Confirmed!</h2>
+  <p id="confirmationMessage"></p>
+</div>
+
+
+  </main>
+
+<script>
+const stopsWithTimings = [
+  { name: 'Ennore', time: '5.50 am' },
+  { name: 'Tondiarpet', time: '6.17 am' },
+  { name: 'Triplicane', time: '6.00 am' },
+  { name: 'Choolai', time: '6.00 am' },
+  { name: 'Collector Nagar', time: '6.50 am' },
+  { name: 'Water Tank', time: '6.40 am' },
+  { name: 'East Mugappair', time: '6.30 am' },
+  { name: 'CIT Nagar', time: '6.10 am' },
+  { name: 'Loyola College', time: '6.40 am' },
+  { name: 'Chinmayanagar', time: '6.10 am' },
+  { name: 'Santhome', time: '6.10 am' },
+  { name: 'Kovilambakkam', time: '6.10 am' },
+  { name: 'MKB Nagar', time: '6.00 am' },
+  { name: 'Perambur', time: '6.30 am' },
+  { name: 'Thachoor', time: '5.50 am' },
+  { name: 'Chengalpattu', time: '6.00 am' },
+  { name: 'Guduvanchery', time: '6.30 am' },
+  { name: 'Manali', time: '6.05 am' },
+  { name: 'Vyasarpadi', time: '6.20 am' },
+  { name: 'ICF', time: '6.45 am' },
+  { name: 'Thiruvallur', time: '6.30 am' },
+  { name: 'Kakkalur', time: '6.55 am' },
+  { name: 'Kancheepuram', time: '6.00 am' },
+  { name: 'Orikkai', time: '6.15 am' },
+  { name: 'Neelangkarai', time: '6.10 am' },
+  { name: 'Guindy', time: '6.45 am' },
+  { name: 'Valluvarkottam', time: '6.15 am' },
+  { name: 'Valasaravakkam', time: '6.45 am' },
+  { name: 'Pallikaranai', time: '6.15 am' },
+  { name: 'Sembakkam', time: '6.25 am' },
+  { name: 'Poombukar', time: '6.10 am' },
+  { name: 'Vepampattu', time: '6.30 am' },
+  { name: 'Ayyapakkam', time: '6.15 am' },
+  { name: 'Thiruthani', time: '5.55 am' },
+  { name: 'K4 Police Station', time: '6.35 am' },
+  { name: 'Arcot', time: '5.40 am' },
+  { name: 'Kallikuppam', time: '6.45 am' },
+  { name: 'Pudur', time: '6.45 am' },
+  { name: 'Andarkuppam', time: '6.35 am' },
+  { name: 'Avadi', time: '6.25 am' },
+  { name: 'Kollumedu', time: '6.30 am' },
+  { name: 'Agaram', time: '6.20 am' },
+  { name: 'Velachery', time: '6.10 am' },
+  { name: 'Pammal', time: '6.35 am' },
+  { name: 'Sivanthangal', time: '7.05 am' },
+  { name: 'Uthiramerur', time: '5.40 am' },
+  { name: 'Vellore', time: '5.30 am' },
+  { name: 'Sholingur', time: '5.35 am' },
+  { name: 'Panappakkam-Nemili', time: '6.05 am' }
+];
+
+let bookedSeats = [5, 8, 12, 14, 18, 20, 30, 35]; // Array to track booked seats
+
+let selectedSeat = null;
+
+window.onload = () => {
+  const boardingDropdown = document.getElementById('boardingPoint');
+  stopsWithTimings.forEach(stop => {
+    const option = document.createElement('option');
+    option.value = stop.name;
+    option.textContent = `${stop.name} (${stop.time})`;
+    boardingDropdown.appendChild(option);
+  });
+};
+
+function login() {
+  const regNo = document.getElementById('regNo').value;
+  if (!regNo) {
+    alert('Please enter your register number.');
+    return;
+  }
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('boardingPage').classList.remove('hidden');
+}
+
+function showBuses() {
+  const boardingPoint = document.getElementById('boardingPoint').value;
+  if (!boardingPoint) {
+    alert('Please select a stopping point.');
+    return;
+  }
+  document.getElementById('boardingPage').classList.add('hidden');
+  document.getElementById('busListPage').classList.remove('hidden');
+  document.getElementById('busList').innerHTML = `<li>Bus available for: <strong>${boardingPoint}</strong></li>`;
+  document.getElementById('busList').innerHTML += `<button onclick="selectSeat()">Proceed to Seat Selection</button>`;
+}
+
+function selectSeat() {
+  document.getElementById('busListPage').classList.add('hidden');
+  document.getElementById('seatSelectionPage').classList.remove('hidden');
+  generateSeats();
+}
+
+function generateSeats() {
+  const seatLayout = document.getElementById('seatLayout');
+  seatLayout.innerHTML = '';
+
+  for (let i = 1; i <= 40; i++) {
+    const seat = document.createElement('div');
+    seat.classList.add('seat');
+    seat.textContent = i;
+
+    // Check if the seat is booked
+    if (bookedSeats.includes(i)) {
+      seat.classList.add('booked');
+      seat.style.backgroundColor = '#dc3545'; // Booked seat in red
+    }
+
+    seat.addEventListener('click', () => selectSeatNumber(seat));
+    seatLayout.appendChild(seat);
+
+    if (i % 5 === 2) { // Gap between 2 and 3 seats
+      const gap = document.createElement('div');
+      gap.style.width = '20px';
+      seatLayout.appendChild(gap);
+    }
+  }
+}
+
+function selectSeatNumber(seat) {
+  if (seat.classList.contains('booked')) return; // Don't allow selection of booked seats
+  if (selectedSeat) selectedSeat.style.backgroundColor = '#d4edda';
+  selectedSeat = seat;
+  seat.style.backgroundColor = '#ffc107';
+}
+
+function confirmSeat() {
+  if (!selectedSeat) {
+    alert('Please select a seat first!');
+    return;
+  }
+  selectedSeat.classList.add('booked');
+  selectedSeat.style.backgroundColor = '#dc3545';
+  selectedSeat.textContent += '✓';
+  bookedSeats.push(parseInt(selectedSeat.textContent)); // Add to booked seats array
+  selectedSeat = null;
+  document.getElementById('seatSelectionPage').classList.add('hidden');
+  document.getElementById('confirmationPage').classList.remove('hidden');
+  document.getElementById('confirmationMessage').textContent = 'Your seat has been booked successfully!';
+}
+</script>
+
+</body>
+</html>

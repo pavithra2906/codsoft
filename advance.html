@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carbon Calculator for Households</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f9f4;
+      margin: 0;
+      padding: 10px;
+    }
+    h1 {
+      text-align: center;
+      color: #2d3436;
+    }
+    form, #result, #tips {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 20px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      margin-top: 10px;
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 4px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      background-color: #27ae60;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    svg {
+      display: block;
+      margin: auto;
+    }
+    @media (max-width: 600px) {
+      form, #result, #tips {
+        padding: 15px;
+        margin: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌍 Household Carbon Footprint Calculator</h1>
+
+  <form id="carbonForm">
+    <label>Monthly Electricity Use (kWh):</label>
+    <input type="number" id="electricity" required>
+
+    <label>Monthly Driving Distance (km):</label>
+    <input type="number" id="driving" required>
+
+    <label>Weekly Meat Consumption (kg):</label>
+    <input type="number" id="meat" required>
+
+    <label>Monthly Public Transport (km):</label>
+    <input type="number" id="transport" required>
+
+    <label>Appliance Use (hours/month):</label>
+    <input type="number" id="appliances" required>
+
+    <button type="submit">Calculate Footprint</button>
+  </form>
+
+  <div id="result">
+    <h2>Total Annual CO₂ Emissions (kg): <span id="totalCO2">-</span></h2>
+    <div id="chart"></div>
+  </div>
+
+  <div id="tips">
+    <h2>🌟 Personalized Tip:</h2>
+    <p id="tipText">—</p>
+  </div>
+
+  <script>
+    const form = document.getElementById("carbonForm");
+
+    const inputs = ["electricity", "driving", "meat", "transport", "appliances"];
+    // Auto-fill with localStorage values if present
+    window.onload = () => {
+      inputs.forEach(id => {
+        const val = localStorage.getItem(id);
+        if (val) document.getElementById(id).value = val;
+      });
+    };
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const electricity = parseFloat(document.getElementById("electricity").value);
+      const driving = parseFloat(document.getElementById("driving").value);
+      const meat = parseFloat(document.getElementById("meat").value);
+      const transport = parseFloat(document.getElementById("transport").value);
+      const appliances = parseFloat(document.getElementById("appliances").value);
+
+      // Save to localStorage
+      inputs.forEach(id => {
+        localStorage.setItem(id, document.getElementById(id).value);
+      });
+
+      // Emission Factors
+      const efElectricity = 0.92;  // kg CO₂ per kWh
+      const efDriving = 0.21;      // kg CO₂ per km
+      const efMeat = 27;           // kg CO₂ per kg
+      const efTransport = 0.05;    // kg CO₂ per km (bus/train)
+      const efAppliances = 0.5;    // kg CO₂ per hour
+
+      const co2Electricity = electricity * 12 * efElectricity;
+      const co2Driving = driving * 12 * efDriving;
+      const co2Meat = meat * 52 * efMeat;
+      const co2Transport = transport * 12 * efTransport;
+      const co2Appliances = appliances * 12 * efAppliances;
+
+      const total = (co2Electricity + co2Driving + co2Meat + co2Transport + co2Appliances).toFixed(2);
+      document.getElementById("totalCO2").innerText = total;
+
+      const data = [
+        { name: "Electricity", value: co2Electricity },
+        { name: "Driving", value: co2Driving },
+        { name: "Meat", value: co2Meat },
+        { name: "Public Transport", value: co2Transport },
+        { name: "Appliances", value: co2Appliances }
+      ];
+
+      drawChart(data);
+
+      // Tips logic
+      let maxSource = data.reduce((a, b) => a.value > b.value ? a : b).name;
+      const tips = {
+        "Electricity": "Switch to LED bulbs or solar energy to reduce electricity usage.",
+        "Driving": "Use public transport, walk or bike when possible to reduce driving emissions.",
+        "Meat": "Try having more vegetarian meals to lower your meat-related emissions.",
+        "Public Transport": "Bus/train are better than personal vehicles, but combining trips reduces emissions even more.",
+        "Appliances": "Unplug appliances when not in use and use energy-efficient models."
+      };
+      document.getElementById("tipText").innerText = tips[maxSource];
+    });
+
+    function drawChart(data) {
+      d3.select("#chart").html(""); // Clear old chart
+      const width = 300, height = 300, radius = Math.min(width, height) / 2;
+
+      const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+      const color = d3.scaleOrdinal(d3.schemeSet2);
+      const pie = d3.pie().value(d => d.value);
+      const arc = d3.arc().innerRadius(0).outerRadius(radius);
+
+      const arcs = svg.selectAll("arc")
+        .data(pie(data))
+        .enter()
+        .append("g");
+
+      arcs.append("path")
+        .attr("d", arc)
+        .attr("fill", (d, i) => color(i));
+
+      arcs.append("text")
+        .attr("transform", d => `translate(${arc.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "11px")
+        .text(d => d.data.name);
+    }
+  </script>
+</body>
+</html>
